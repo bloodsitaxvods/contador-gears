@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Marcador de muertes - Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --negro: #0D0D0D;
+    --fondo: #17121A;
+    --neon: #FF007F;
+    --pastel: #FFC1DA;
+    --blanco: #FFFFFF;
+    --gris: #2A2230;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--fondo);
+    color: var(--blanco);
+    font-family: 'Fredoka', 'Quicksand', 'Segoe UI', sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    padding: 18px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .estado {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .punto {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #777;
+  }
+  .punto.ok { background: #5BE08A; }
+  .punto.mal { background: #FF5A5A; }
+
+  .tablero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .jugador {
+    border-radius: 24px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #j-kizashi {
+    background: var(--negro);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+  }
+  #j-bloodsitax {
+    background: var(--neon);
+    color: var(--pastel);
+    box-shadow: 0 0 26px rgba(255, 0, 127, 0.4);
+  }
+
+  .encabezado {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .nombre {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 3px;
+  }
+  .atajo {
+    font-size: 13px;
+    opacity: 0.6;
+  }
+
+  .cuenta {
+    font-size: 96px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: 0;
+    border-radius: 18px;
+    transition: transform 80ms ease, filter 120ms ease;
+  }
+  button:active { transform: scale(0.97); }
+  button:focus-visible, input:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .grande {
+    height: 170px;
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  #j-kizashi .grande {
+    background: var(--blanco);
+    color: var(--negro);
+  }
+  #j-bloodsitax .grande {
+    background: var(--pastel);
+    color: #8A0047;
+  }
+  .grande:hover { filter: brightness(0.95); }
+
+  .correccion {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .chico {
+    height: 40px;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.14);
+    color: inherit;
+    border-radius: 12px;
+  }
+  .chico:hover { background: rgba(255, 255, 255, 0.24); }
+
+  input[type="number"] {
+    height: 40px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.3);
+    color: inherit;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 0 12px;
+  }
+
+  footer {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  footer .acciones { display: flex; gap: 8px; }
+  footer .chico { background: var(--gris); color: var(--blanco); }
+  footer .peligro { background: #4A1830; color: var(--pastel); }
+
+  .ayuda {
+    font-size: 13px;
+    opacity: 0.6;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 12px; }
+    .tablero { gap: 10px; }
+    .jugador { padding: 12px; border-radius: 20px; }
+    .nombre { font-size: 16px; letter-spacing: 2px; }
+    .atajo { display: none; }
+    .cuenta { font-size: 64px; }
+    .grande { height: 150px; font-size: 52px; }
+    .correccion { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Marcador de muertes</h1>
+  <div class="estado"><span class="punto" id="punto"></span><span id="estado-texto">Conectando</span></div>
+</header>
+
+<main class="tablero">
+  <section class="jugador" id="j-kizashi">
+    <div class="encabezado">
+      <span class="nombre">KIZASHI</span>
+      <span class="atajo">tecla 1</span>
+    </div>
+    <div class="cuenta" id="cuenta-kizashi">0</div>
+    <button class="grande" id="mas-kizashi" aria-label="Sumar una muerte a Kizashi">+1</button>
+    <div class="correccion">
+      <button class="chico" id="menos-kizashi" aria-label="Restar una muerte a Kizashi">Restar 1</button>
+      <input type="number" min="0" id="valor-kizashi" placeholder="Valor exacto" aria-label="Valor exacto de Kizashi">
+      <button class="chico" id="fijar-kizashi">Fijar</button>
+    </div>
+  </section>
+
+  <section class="jugador" id="j-bloodsitax">
+    <div class="encabezado">
+      <span class="nombre">BLOODSITAX</span>
+      <span class="atajo">tecla 2</span>
+    </div>
+    <div class="cuenta" id="cuenta-bloodsitax">0</div>
+    <button class="grande" id="mas-bloodsitax" aria-label="Sumar una muerte a Bloodsitax">+1</button>
+    <div class="correccion">
+      <button class="chico" id="menos-bloodsitax" aria-label="Restar una muerte a Bloodsitax">Restar 1</button>
+      <input type="number" min="0" id="valor-bloodsitax" placeholder="Valor exacto" aria-label="Valor exacto de Bloodsitax">
+      <button class="chico" id="fijar-bloodsitax">Fijar</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="acciones">
+    <button class="chico" id="deshacer">Deshacer ultimo cambio</button>
+    <button class="chico peligro" id="reiniciar">Reiniciar a 0</button>
+  </div>
+  <div class="ayuda">
+    Atajos con esta pestana activa: 1 suma a Kizashi, 2 suma a Bloodsitax.<br>
+    Con Shift resta. Z deshace.
+  </div>
+</footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDVgErtkYAK1OLghyxRlqCN4Sg_qmbmGSk",
+    authDomain: "contador-muertes-bloodsitax.firebaseapp.com",
+    databaseURL: "https://contador-muertes-bloodsitax-default-rtdb.firebaseio.com",
+    projectId: "contador-muertes-bloodsitax",
+    storageBucket: "contador-muertes-bloodsitax.firebasestorage.app",
+    messagingSenderId: "998138833144",
+    appId: "1:998138833144:web:91f330197ae227c16cb30d"
+  };
+
+  // Mismo valor en el panel y en el overlay
+  const RUTA = "gears-colab/muertes";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const $ = (id) => document.getElementById(id);
+  const jugadores = ["kizashi", "bloodsitax"];
+  const historial = [];
+
+  // Conexion
+  onValue(ref(db, ".info/connected"), (snap) => {
+    const ok = snap.val() === true;
+    $("punto").className = "punto " + (ok ? "ok" : "mal");
+    $("estado-texto").textContent = ok ? "En linea" : "Sin conexion";
+  });
+
+  // Valores en tiempo real
+  onValue(ref(db, RUTA), (snap) => {
+    const v = snap.val() || {};
+    jugadores.forEach((j) => { $("cuenta-" + j).textContent = Number(v[j]) || 0; });
+  });
+
+  // Cambio atomico: si los dos suman al mismo tiempo no se pisan
+  function cambiar(quien, delta, guardar = true) {
+    return runTransaction(ref(db, `${RUTA}/${quien}`), (actual) => {
+      return Math.max(0, (Number(actual) || 0) + delta);
+    }).then((res) => {
+      if (guardar && res.committed) historial.push({ quien, delta });
+    });
+  }
+
+  jugadores.forEach((j) => {
+    $("mas-" + j).addEventListener("click", () => cambiar(j, 1));
+    $("menos-" + j).addEventListener("click", () => cambiar(j, -1));
+    $("fijar-" + j).addEventListener("click", () => {
+      const campo = $("valor-" + j);
+      const n = parseInt(campo.value, 10);
+      if (Number.isNaN(n) || n < 0) return;
+      set(ref(db, `${RUTA}/${j}`), n);
+      historial.length = 0;
+      campo.value = "";
+    });
+    $("valor-" + j).addEventListener("keydown", (e) => {
+      if (e.key === "Enter") $("fijar-" + j).click();
+    });
+  });
+
+  function deshacer() {
+    const ultimo = historial.pop();
+    if (!ultimo) return;
+    cambiar(ultimo.quien, -ultimo.delta, false);
+  }
+  $("deshacer").addEventListener("click", deshacer);
+
+  $("reiniciar").addEventListener("click", () => {
+    if (!confirm("Esto deja a los dos en 0. Continuar?")) return;
+    set(ref(db, RUTA), { kizashi: 0, bloodsitax: 0 });
+    historial.length = 0;
+  });
+
+  // Atajos de teclado (solo con esta pestana enfocada)
+  window.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
+    const delta = e.shiftKey ? -1 : 1;
+    if (e.code === "Digit1" || e.code === "Numpad1") { cambiar("kizashi", delta); e.preventDefault(); }
+    else if (e.code === "Digit2" || e.code === "Numpad2") { cambiar("bloodsitax", delta); e.preventDefault(); }
+    else if (e.code === "KeyZ") { deshacer(); e.preventDefault(); }
+  });
+</script>
+</body>
+</html>
