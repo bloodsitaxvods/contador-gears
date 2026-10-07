@@ -104,13 +104,15 @@
 
   .encabezado {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
+    gap: 4px 10px;
   }
   .nombre {
     font-size: 22px;
     font-weight: 600;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
   }
   .atajo {
     font-size: 13px;
@@ -205,7 +207,7 @@
     body { padding: 12px; }
     .tablero { gap: 10px; }
     .jugador { padding: 12px; border-radius: 20px; }
-    .nombre { font-size: 16px; letter-spacing: 2px; }
+    .nombre { font-size: 11px; letter-spacing: 0.5px; white-space: nowrap; }
     .atajo { display: none; }
     .cuenta { font-size: 64px; }
     .grande { height: 150px; font-size: 52px; }
@@ -225,7 +227,7 @@
 <main class="tablero">
   <section class="jugador" id="j-kizashi">
     <div class="encabezado">
-      <span class="nombre">KIZASHI</span>
+      <span class="nombre">KIZASHI - TURIP</span>
       <span class="atajo">tecla 1</span>
     </div>
     <div class="cuenta" id="cuenta-kizashi">0</div>
@@ -239,7 +241,7 @@
 
   <section class="jugador" id="j-bloodsitax">
     <div class="encabezado">
-      <span class="nombre">BLOODSITAX</span>
+      <span class="nombre">BLOODSITAX - SUPOR</span>
       <span class="atajo">tecla 2</span>
     </div>
     <div class="cuenta" id="cuenta-bloodsitax">0</div>
