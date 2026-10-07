@@ -66,6 +66,18 @@
   .punto.ok { background: #5BE08A; }
   .punto.mal { background: #FF5A5A; }
 
+  .aviso {
+    display: none;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #4A1830;
+    color: var(--pastel);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .aviso.visible { display: block; }
+
   .tablero {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -208,6 +220,8 @@
   <div class="estado"><span class="punto" id="punto"></span><span id="estado-texto">Conectando</span></div>
 </header>
 
+<div class="aviso" id="aviso" role="alert"></div>
+
 <main class="tablero">
   <section class="jugador" id="j-kizashi">
     <div class="encabezado">
@@ -273,9 +287,34 @@
   const jugadores = ["kizashi", "bloodsitax"];
   const historial = [];
 
+  function avisar(texto) {
+    const a = $("aviso");
+    if (!texto) { a.classList.remove("visible"); a.textContent = ""; return; }
+    a.textContent = texto;
+    a.classList.add("visible");
+  }
+
+  function errorFirebase(e) {
+    const txt = String((e && (e.code || e.message)) || e);
+    console.error("Error de Firebase:", e);
+    if (/permission/i.test(txt)) {
+      avisar("Firebase rechazo el cambio por permisos. Revisa en Realtime Database > Reglas que exista la ruta gears-colab/muertes con .read y .write en true, y que hayas pulsado Publicar.");
+    } else {
+      avisar("No se pudo guardar el cambio: " + txt);
+    }
+  }
+
+  let conectado = false;
+  setTimeout(() => {
+    if (!conectado) {
+      avisar("No hay conexion con Firebase despues de 8 segundos. Revisa la databaseURL en el codigo y que la base de datos Realtime Database exista en el proyecto.");
+    }
+  }, 8000);
+
   // Conexion
   onValue(ref(db, ".info/connected"), (snap) => {
     const ok = snap.val() === true;
+    if (ok) { conectado = true; }
     $("punto").className = "punto " + (ok ? "ok" : "mal");
     $("estado-texto").textContent = ok ? "En linea" : "Sin conexion";
   });
@@ -284,15 +323,16 @@
   onValue(ref(db, RUTA), (snap) => {
     const v = snap.val() || {};
     jugadores.forEach((j) => { $("cuenta-" + j).textContent = Number(v[j]) || 0; });
-  });
+  }, errorFirebase);
 
   // Cambio atomico: si los dos suman al mismo tiempo no se pisan
   function cambiar(quien, delta, guardar = true) {
     return runTransaction(ref(db, `${RUTA}/${quien}`), (actual) => {
       return Math.max(0, (Number(actual) || 0) + delta);
     }).then((res) => {
+      avisar("");
       if (guardar && res.committed) historial.push({ quien, delta });
-    });
+    }).catch(errorFirebase);
   }
 
   jugadores.forEach((j) => {
@@ -302,7 +342,7 @@
       const campo = $("valor-" + j);
       const n = parseInt(campo.value, 10);
       if (Number.isNaN(n) || n < 0) return;
-      set(ref(db, `${RUTA}/${j}`), n);
+      set(ref(db, `${RUTA}/${j}`), n).catch(errorFirebase);
       historial.length = 0;
       campo.value = "";
     });
@@ -320,7 +360,7 @@
 
   $("reiniciar").addEventListener("click", () => {
     if (!confirm("Esto deja a los dos en 0. Continuar?")) return;
-    set(ref(db, RUTA), { kizashi: 0, bloodsitax: 0 });
+    set(ref(db, RUTA), { kizashi: 0, bloodsitax: 0 }).catch(errorFirebase);
     historial.length = 0;
   });
 
