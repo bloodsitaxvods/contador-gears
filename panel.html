@@ -185,6 +185,65 @@
     padding: 0 12px;
   }
 
+  .fondo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 2px;
+    font-size: 14px;
+  }
+  .fondo label {
+    flex: 1;
+    opacity: 0.85;
+  }
+  input[type="color"] {
+    width: 52px;
+    height: 38px;
+    padding: 2px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+
+  .brillo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    font-size: 14px;
+  }
+  .brillo label.titulo-fila {
+    flex: 1 1 100%;
+    opacity: 0.85;
+  }
+  .brillo input[type="range"] {
+    flex: 1;
+    min-width: 120px;
+    height: 28px;
+    accent-color: currentColor;
+    cursor: pointer;
+  }
+  .brillo .valor {
+    min-width: 34px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+  .interruptor {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    opacity: 0.9;
+  }
+  .interruptor input {
+    width: 18px;
+    height: 18px;
+    accent-color: currentColor;
+    cursor: pointer;
+  }
+
   footer {
     margin-top: 18px;
     display: flex;
@@ -237,6 +296,17 @@
       <input type="number" min="0" id="valor-kizashi" placeholder="Valor exacto" aria-label="Valor exacto de Kizashi">
       <button class="chico" id="fijar-kizashi">Fijar</button>
     </div>
+    <div class="fondo">
+      <label for="color-kizashi">Fondo del marco</label>
+      <input type="color" id="color-kizashi" aria-label="Color de fondo del marco de kizashi">
+      <button class="chico" id="restaurar-kizashi">Restaurar</button>
+    </div>
+    <div class="brillo">
+      <label class="titulo-fila" for="brillo-kizashi">Brillo del nombre</label>
+      <input type="range" id="brillo-kizashi" min="0" max="100" step="1" aria-label="Intensidad del brillo del nombre de kizashi">
+      <span class="valor" id="valor-brillo-kizashi">40</span>
+      <label class="interruptor"><input type="checkbox" id="brillo-on-kizashi" checked>Activo</label>
+    </div>
   </section>
 
   <section class="jugador" id="j-bloodsitax">
@@ -251,6 +321,17 @@
       <input type="number" min="0" id="valor-bloodsitax" placeholder="Valor exacto" aria-label="Valor exacto de Bloodsitax">
       <button class="chico" id="fijar-bloodsitax">Fijar</button>
     </div>
+    <div class="fondo">
+      <label for="color-bloodsitax">Fondo del marco</label>
+      <input type="color" id="color-bloodsitax" aria-label="Color de fondo del marco de bloodsitax">
+      <button class="chico" id="restaurar-bloodsitax">Restaurar</button>
+    </div>
+    <div class="brillo">
+      <label class="titulo-fila" for="brillo-bloodsitax">Brillo del nombre</label>
+      <input type="range" id="brillo-bloodsitax" min="0" max="100" step="1" aria-label="Intensidad del brillo del nombre de bloodsitax">
+      <span class="valor" id="valor-brillo-bloodsitax">40</span>
+      <label class="interruptor"><input type="checkbox" id="brillo-on-bloodsitax" checked>Activo</label>
+    </div>
   </section>
 </main>
 
@@ -258,6 +339,7 @@
   <div class="acciones">
     <button class="chico" id="deshacer">Deshacer ultimo cambio</button>
     <button class="chico peligro" id="reiniciar">Reiniciar a 0</button>
+    <button class="chico" id="descargar">Descargar overlay con estos ajustes</button>
   </div>
   <div class="ayuda">
     Atajos con esta pestana activa: 1 suma a Kizashi, 2 suma a Bloodsitax.<br>
@@ -364,6 +446,111 @@
     if (!confirm("Esto deja a los dos en 0. Continuar?")) return;
     set(ref(db, RUTA), { kizashi: 0, bloodsitax: 0 }).catch(errorFirebase);
     historial.length = 0;
+  });
+
+
+  // Color de fondo del marco (se guarda en Firebase y el overlay lo lee en vivo)
+  const RUTA_COLORES = "gears-colab/colores";
+  const COLOR_BASE = { kizashi: "#0d0d0d", bloodsitax: "#ff007f" };
+  const esperaColor = {};
+
+  jugadores.forEach((j) => {
+    const campo = $("color-" + j);
+    campo.value = COLOR_BASE[j];
+    campo.addEventListener("input", () => {
+      clearTimeout(esperaColor[j]);
+      esperaColor[j] = setTimeout(() => {
+        set(ref(db, `${RUTA_COLORES}/${j}`), campo.value).catch(errorFirebase);
+      }, 120);
+    });
+    $("restaurar-" + j).addEventListener("click", () => {
+      campo.value = COLOR_BASE[j];
+      set(ref(db, `${RUTA_COLORES}/${j}`), COLOR_BASE[j]).catch(errorFirebase);
+    });
+  });
+
+  onValue(ref(db, RUTA_COLORES), (snap) => {
+    const v = snap.val() || {};
+    jugadores.forEach((j) => {
+      const campo = $("color-" + j);
+      const c = v[j];
+      if (typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c) && document.activeElement !== campo) {
+        campo.value = c.toLowerCase();
+      }
+    });
+  }, errorFirebase);
+
+
+  // Brillo del nombre: intensidad 0-100 y opcion de quitarlo por completo
+  const RUTA_BRILLO = "gears-colab/brillo";
+  const BRILLO_BASE = { activo: true, nivel: 40 };
+  const esperaBrillo = {};
+
+  function leerBrillo(j) {
+    return { activo: $("brillo-on-" + j).checked, nivel: Number($("brillo-" + j).value) };
+  }
+
+  function pintarBrillo(j, cfg) {
+    $("brillo-" + j).value = cfg.nivel;
+    $("valor-brillo-" + j).textContent = cfg.nivel;
+    $("brillo-on-" + j).checked = cfg.activo;
+    $("brillo-" + j).disabled = !cfg.activo;
+  }
+
+  function guardarBrillo(j) {
+    clearTimeout(esperaBrillo[j]);
+    esperaBrillo[j] = setTimeout(() => {
+      set(ref(db, `${RUTA_BRILLO}/${j}`), leerBrillo(j)).catch(errorFirebase);
+    }, 120);
+  }
+
+  jugadores.forEach((j) => {
+    pintarBrillo(j, BRILLO_BASE);
+    $("brillo-" + j).addEventListener("input", () => {
+      $("valor-brillo-" + j).textContent = $("brillo-" + j).value;
+      guardarBrillo(j);
+    });
+    $("brillo-on-" + j).addEventListener("change", () => {
+      $("brillo-" + j).disabled = !$("brillo-on-" + j).checked;
+      guardarBrillo(j);
+    });
+  });
+
+  onValue(ref(db, RUTA_BRILLO), (snap) => {
+    const v = snap.val() || {};
+    jugadores.forEach((j) => {
+      const c = v[j];
+      if (!c || document.activeElement === $("brillo-" + j)) return;
+      const nivel = Number(c.nivel);
+      pintarBrillo(j, {
+        activo: c.activo !== false,
+        nivel: Number.isNaN(nivel) ? BRILLO_BASE.nivel : Math.max(0, Math.min(100, nivel))
+      });
+    });
+  }, errorFirebase);
+
+  // Descarga el overlay final con los colores actuales fijos
+  $("descargar").addEventListener("click", async () => {
+    try {
+      const resp = await fetch("overlay.html", { cache: "no-store" });
+      if (!resp.ok) throw new Error("No se encontro overlay.html");
+      let html = await resp.text();
+      const k = $("color-kizashi").value.toUpperCase();
+      const b = $("color-bloodsitax").value.toUpperCase();
+      html = html.replace(/const COLORES_BASE = \{[^}]*\};/, `const COLORES_BASE = {kizashi: "${k}", bloodsitax: "${b}"};`);
+      const brillo = { kizashi: leerBrillo("kizashi"), bloodsitax: leerBrillo("bloodsitax") };
+      html = html.replace(/const BRILLO_BASE = \{.*\};/, `const BRILLO_BASE = ${JSON.stringify(brillo)};`);
+      html = html.replace("const SINCRONIZAR_COLORES = true;", "const SINCRONIZAR_COLORES = false;");
+      const blob = new Blob([html], { type: "text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "overlay.html";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      avisar("");
+    } catch (e) {
+      avisar("No se pudo generar el archivo. Abre el panel desde la direccion de GitHub Pages, no desde un archivo guardado en tu PC.");
+    }
   });
 
   // Atajos de teclado (solo con esta pestana enfocada)
