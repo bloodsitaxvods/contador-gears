@@ -13,6 +13,7 @@
     --neon: #FF007F;
     --pastel: #FFC1DA;
     --blanco: #FFFFFF;
+    --rojo-marco: #D81B26;
   }
 
   html, body {
@@ -24,13 +25,13 @@
     overflow: hidden;
   }
 
-  /* Escenario fijo de 1040x372 que se escala para llenar el Browser Source */
+  /* Escenario fijo de 832x323 que se escala para llenar el Browser Source */
   #stage {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1040px;
-    height: 372px;
+    width: 832px;
+    height: 323px;
     transform-origin: center center;
     transform: translate(-50%, -50%);
     font-family: 'Fredoka', 'Quicksand', 'Segoe UI', sans-serif;
@@ -42,57 +43,93 @@
     left: 0;
     right: 0;
     top: 0;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-    font-weight: 500;
-    letter-spacing: 12px;
-    text-indent: 12px;
-    color: var(--blanco);
-    opacity: 0.85;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
-  }
-
-  /* Nombres sobre el borde superior de cada marco */
-  .nombre {
-    position: absolute;
-    top: 34px;
-    width: 520px;
     height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    gap: 18px;
+    font-size: 28px;
     font-weight: 600;
-    letter-spacing: 4px;
-    text-indent: 4px;
-    line-height: 1;
-    white-space: nowrap;
-  }
-  #nombre-kizashi {
-    left: 0;
+    letter-spacing: 8px;
+    text-indent: 8px;
     color: var(--blanco);
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+    text-shadow: 0 0 14px rgba(255, 255, 255, 0.3), 0 2px 8px rgba(0, 0, 0, 0.9);
   }
-  #nombre-bloodsitax {
-    left: 520px;
+  .titulo::before,
+  .titulo::after {
+    content: "";
+    width: 150px;
+    height: 3px;
+    border-radius: 2px;
+  }
+  .titulo::before {
+    background: linear-gradient(to right, transparent, var(--rojo-marco));
+    box-shadow: 0 0 10px rgba(216, 27, 38, 0.6);
+  }
+  .titulo::after {
+    background: linear-gradient(to left, transparent, var(--neon));
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.6);
+  }
+
+  /* Nombres como pestana pegada al borde superior de cada marco */
+  .nombre {
+    position: absolute;
+    top: 40px;
+    width: 416px;
+    height: 42px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #nombre-kizashi { left: 0; }
+  #nombre-bloodsitax { left: 416px; }
+
+  .placa {
+    box-sizing: border-box;
+    height: 40px;
+    max-width: 416px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    white-space: nowrap;
+    border: 2px solid;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    background: rgba(10, 10, 12, 0.78);
+  }
+  #nombre-kizashi .placa {
+    border-color: var(--rojo-marco);
+    color: var(--blanco);
+    box-shadow: 0 0 14px rgba(216, 27, 38, 0.5);
+  }
+  #nombre-bloodsitax .placa {
+    border-color: var(--neon);
     color: var(--pastel);
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 14px rgba(255, 0, 127, 0.55);
+    box-shadow: 0 0 14px rgba(255, 0, 127, 0.55);
+  }
+  /* Nombre y apodo con el mismo tamano; --tam lo ajusta el script si no cabe */
+  .principal,
+  .sufijo {
+    font-size: var(--tam, 28px);
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    line-height: 1;
+    text-shadow: var(--brillo, none);
   }
 
   /* Marcos pegados, sin sobreponerse (cada PNG mide 1649 x 954) */
   .marco {
     position: absolute;
-    top: 71px;
-    width: 520px;
-    height: 301px;
+    top: 82px;
+    width: 416px;
+    height: 241px;
   }
   #marco-kizashi { left: 0; }
-  #marco-bloodsitax { left: 520px; }
+  #marco-bloodsitax { left: 416px; }
 
-  /* Relleno de color que queda DETRAS del marco, dentro del hueco */
+  /* Relleno de color que queda DETRAS del marco, dentro del hueco.
+     Los tres tonos se calculan desde un solo color base. */
   .relleno {
     position: absolute;
     left: 6.5%;
@@ -100,13 +137,10 @@
     top: 9%;
     bottom: 10%;
     border-radius: 12px;
+    background: radial-gradient(ellipse at center, var(--c1) 0%, var(--c2) 65%, var(--c3) 100%);
   }
-  #marco-kizashi .relleno {
-    background: radial-gradient(ellipse at center, #1C1C1C 0%, var(--negro) 65%, #000 100%);
-  }
-  #marco-bloodsitax .relleno {
-    background: radial-gradient(ellipse at center, var(--neon) 0%, #E6006F 60%, #A80050 100%);
-  }
+  #marco-kizashi .relleno   { --c1: #1C1C1C; --c2: #0B0B0B; --c3: #080808; }
+  #marco-bloodsitax .relleno { --c1: #FF0F86; --c2: #E6006F; --c3: #A60052; }
 
   .arte {
     position: absolute;
@@ -130,14 +164,14 @@
   }
 
   .numero {
-    font-size: 156px;
+    font-size: 140px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     transform-origin: center 60%;
   }
   /* Con 4 digitos el numero se achica para no tocar el marco */
-  .numero.largo { font-size: 120px; }
+  .numero.largo { font-size: 104px; }
 
   #marco-kizashi .contenido {
     color: var(--blanco);
@@ -168,8 +202,12 @@
 <div id="stage">
   <div class="titulo">MUERTES</div>
 
-  <div class="nombre" id="nombre-kizashi">KIZASHI - TURIP</div>
-  <div class="nombre" id="nombre-bloodsitax">BLOODSITAX - SUPOR</div>
+  <div class="nombre" id="nombre-kizashi">
+    <div class="placa"><span class="principal">KIZASHI</span><span class="sufijo">- TURIP</span></div>
+  </div>
+  <div class="nombre" id="nombre-bloodsitax">
+    <div class="placa"><span class="principal">BLOODSITAX</span><span class="sufijo">- SUPOR</span></div>
+  </div>
 
   <div class="marco" id="marco-kizashi">
     <div class="relleno"></div>
@@ -204,10 +242,19 @@
 
   // Mismo valor en el panel y en el overlay
   const RUTA = "gears-colab/muertes";
+  const RUTA_COLORES = "gears-colab/colores";
+  const RUTA_BRILLO = "gears-colab/brillo";
+
+  // Colores del fondo de cada marco. El boton de descarga del panel
+  // reemplaza estas dos lineas para dejar los colores fijos.
+  const COLORES_BASE = {kizashi: "#0D0D0D", bloodsitax: "#FF007F"};
+  const BRILLO_BASE = {kizashi: {activo: true, nivel: 40}, bloodsitax: {activo: true, nivel: 40}};
+  const SINCRONIZAR_COLORES = true;
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  /* ---------- Contadores ---------- */
   const els = {
     kizashi: document.getElementById("num-kizashi"),
     bloodsitax: document.getElementById("num-bloodsitax")
@@ -233,6 +280,79 @@
     pintar("kizashi", Number(v.kizashi) || 0);
     pintar("bloodsitax", Number(v.bloodsitax) || 0);
   });
+
+  /* ---------- Color de fondo del marco ---------- */
+  function mezclar(hex, destino, p) {
+    const n = parseInt(hex.slice(1), 16);
+    const canales = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    const d = destino === "blanco" ? 255 : 0;
+    return "#" + canales
+      .map((c) => Math.round(c + (d - c) * p).toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function aplicarColor(quien, hex) {
+    if (typeof hex !== "string" || !/^#[0-9a-f]{6}$/i.test(hex)) return;
+    const relleno = document.querySelector("#marco-" + quien + " .relleno");
+    relleno.style.setProperty("--c1", mezclar(hex, "blanco", 0.06));
+    relleno.style.setProperty("--c2", mezclar(hex, "negro", 0.10));
+    relleno.style.setProperty("--c3", mezclar(hex, "negro", 0.35));
+  }
+
+  aplicarColor("kizashi", COLORES_BASE.kizashi);
+  aplicarColor("bloodsitax", COLORES_BASE.bloodsitax);
+
+  if (SINCRONIZAR_COLORES) {
+    onValue(ref(db, RUTA_COLORES), (snap) => {
+      const v = snap.val() || {};
+      aplicarColor("kizashi", v.kizashi || COLORES_BASE.kizashi);
+      aplicarColor("bloodsitax", v.bloodsitax || COLORES_BASE.bloodsitax);
+    });
+  }
+
+  /* ---------- Brillo del nombre (negro en Kizashi, neon en Bloodsitax) ---------- */
+  function aplicarBrillo(quien, cfg) {
+    const placa = document.querySelector("#nombre-" + quien + " .placa");
+    const activo = !cfg || cfg.activo !== false;
+    let nivel = Number(cfg && cfg.nivel);
+    if (Number.isNaN(nivel)) nivel = 40;
+    nivel = Math.max(0, Math.min(100, nivel));
+    if (!activo || nivel === 0) {
+      placa.style.setProperty("--brillo", "none");
+      return;
+    }
+    const r = (nivel / 100) * 18;
+    const colores = quien === "kizashi"
+      ? ["rgba(0,0,0,0.95)", "rgba(0,0,0,0.6)"]
+      : ["rgba(255,0,127,0.95)", "rgba(255,0,127,0.6)"];
+    placa.style.setProperty(
+      "--brillo",
+      "0 0 " + r.toFixed(1) + "px " + colores[0] + ", 0 0 " + (r * 2).toFixed(1) + "px " + colores[1]
+    );
+  }
+
+  aplicarBrillo("kizashi", BRILLO_BASE.kizashi);
+  aplicarBrillo("bloodsitax", BRILLO_BASE.bloodsitax);
+
+  if (SINCRONIZAR_COLORES) {
+    onValue(ref(db, RUTA_BRILLO), (snap) => {
+      const v = snap.val() || {};
+      aplicarBrillo("kizashi", v.kizashi || BRILLO_BASE.kizashi);
+      aplicarBrillo("bloodsitax", v.bloodsitax || BRILLO_BASE.bloodsitax);
+    });
+  }
+
+  /* ---------- Mismo tamano de letra en los dos nombres, achicando si no caben ---------- */
+  function ajustarNombres() {
+    const placas = document.querySelectorAll(".placa");
+    for (let tam = 28; tam >= 16; tam--) {
+      placas.forEach((p) => p.style.setProperty("--tam", tam + "px"));
+      const cabe = Array.from(placas).every((p) => p.scrollWidth <= 408);
+      if (cabe) break;
+    }
+  }
+  ajustarNombres();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombres);
 </script>
 
 <script>
@@ -240,7 +360,7 @@
   (function () {
     const stage = document.getElementById("stage");
     function ajustar() {
-      const s = Math.min(window.innerWidth / 1040, window.innerHeight / 372);
+      const s = Math.min(window.innerWidth / 832, window.innerHeight / 323);
       stage.style.transform = "translate(-50%, -50%) scale(" + s + ")";
     }
     window.addEventListener("resize", ajustar);
