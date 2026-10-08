@@ -78,6 +78,56 @@
   }
   .aviso.visible { display: block; }
 
+  .modos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .modo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: var(--gris);
+    color: var(--blanco);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    border: 2px solid transparent;
+  }
+  .modo small {
+    font-size: 13px;
+    font-weight: 400;
+    opacity: 0.7;
+  }
+  .modo[aria-pressed="true"] {
+    border-color: var(--pastel);
+    background: #3A2540;
+  }
+
+  body[data-modo="dos"] #j-total { display: none; }
+  body[data-modo="uno"] #j-kizashi,
+  body[data-modo="uno"] #j-bloodsitax { display: none; }
+  body[data-modo="uno"] .tablero {
+    grid-template-columns: 1fr;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  #j-total {
+    background: var(--negro);
+    border: 2px solid #D81B26;
+    box-shadow: 0 0 26px rgba(216, 27, 38, 0.35);
+  }
+  #j-total .nombre { color: #FF3040; }
+  #j-total .grande {
+    background: #D81B26;
+    color: var(--blanco);
+  }
+
   .tablero {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -264,6 +314,8 @@
 
   @media (max-width: 640px) {
     body { padding: 12px; }
+    .modo { padding: 10px 12px; font-size: 14px; }
+    .modo small { font-size: 12px; }
     .tablero { gap: 10px; }
     .jugador { padding: 12px; border-radius: 20px; }
     .nombre { font-size: 11px; letter-spacing: 0.5px; white-space: nowrap; }
@@ -274,7 +326,7 @@
   }
 </style>
 </head>
-<body>
+<body data-modo="dos">
 
 <header>
   <h1>Marcador de muertes</h1>
@@ -282,6 +334,12 @@
 </header>
 
 <div class="aviso" id="aviso" role="alert"></div>
+
+<div class="modos" role="group" aria-label="Modo del overlay">
+  <button class="modo" id="modo-dos" aria-pressed="true">Opcion 1: dos marcos<small>Kizashi y Bloodsitax</small></button>
+  <button class="modo" id="modo-uno" aria-pressed="false">Opcion 2: un marco<small>Contador total de muertes</small></button>
+</div>
+
 
 <main class="tablero">
   <section class="jugador" id="j-kizashi">
@@ -333,6 +391,31 @@
       <label class="interruptor"><input type="checkbox" id="brillo-on-bloodsitax" checked>Activo</label>
     </div>
   </section>
+
+  <section class="jugador" id="j-total">
+    <div class="encabezado">
+      <span class="nombre">MUERTES</span>
+      <span class="atajo">tecla 3</span>
+    </div>
+    <div class="cuenta" id="cuenta-total">0</div>
+    <button class="grande" id="mas-total" aria-label="Sumar una muerte al contador total">+1</button>
+    <div class="correccion">
+      <button class="chico" id="menos-total" aria-label="Restar una muerte al contador total">Restar 1</button>
+      <input type="number" min="0" id="valor-total" placeholder="Valor exacto" aria-label="Valor exacto del contador total">
+      <button class="chico" id="fijar-total">Fijar</button>
+    </div>
+    <div class="fondo">
+      <label for="color-total">Fondo del marco</label>
+      <input type="color" id="color-total" aria-label="Color de fondo del marco del contador total">
+      <button class="chico" id="restaurar-total">Restaurar</button>
+    </div>
+    <div class="brillo">
+      <label class="titulo-fila" for="brillo-total">Brillo del titulo</label>
+      <input type="range" id="brillo-total" min="0" max="100" step="1" aria-label="Intensidad del brillo del nombre del contador total">
+      <span class="valor" id="valor-brillo-total">40</span>
+      <label class="interruptor"><input type="checkbox" id="brillo-on-total" checked>Activo</label>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -342,14 +425,14 @@
     <button class="chico" id="descargar">Descargar overlay con estos ajustes</button>
   </div>
   <div class="ayuda">
-    Atajos con esta pestana activa: 1 suma a Kizashi, 2 suma a Bloodsitax.<br>
+    Atajos con esta pestana activa. Opcion 1: 1 suma a Kizashi, 2 suma a Bloodsitax. Opcion 2: 1 o 3 suman al total.<br>
     Con Shift resta. Z deshace.
   </div>
 </footer>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue, runTransaction, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, onValue, runTransaction, set, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA1xhXuc4pAfNF_ffk62MZV9OFy04R9TQw",
@@ -368,7 +451,7 @@
   const db = getDatabase(app);
 
   const $ = (id) => document.getElementById(id);
-  const jugadores = ["kizashi", "bloodsitax"];
+  const jugadores = ["kizashi", "bloodsitax", "total"];
   const historial = [];
 
   function avisar(texto) {
@@ -443,15 +526,41 @@
   $("deshacer").addEventListener("click", deshacer);
 
   $("reiniciar").addEventListener("click", () => {
-    if (!confirm("Esto deja a los dos en 0. Continuar?")) return;
-    set(ref(db, RUTA), { kizashi: 0, bloodsitax: 0 }).catch(errorFirebase);
+    const visibles = modo === "uno" ? ["total"] : ["kizashi", "bloodsitax"];
+    const texto = modo === "uno" ? "Esto deja el contador total en 0. Continuar?" : "Esto deja a los dos en 0. Continuar?";
+    if (!confirm(texto)) return;
+    const ceros = {};
+    visibles.forEach((j) => { ceros[j] = 0; });
+    update(ref(db, RUTA), ceros).catch(errorFirebase);
     historial.length = 0;
   });
 
 
+
+  // Modo del overlay: "dos" (opcion 1) o "uno" (opcion 2)
+  const RUTA_MODO = "gears-colab/modo";
+  let modo = "dos";
+
+  function pintarModo(m) {
+    modo = m === "uno" ? "uno" : "dos";
+    document.body.dataset.modo = modo;
+    $("modo-dos").setAttribute("aria-pressed", String(modo === "dos"));
+    $("modo-uno").setAttribute("aria-pressed", String(modo === "uno"));
+  }
+
+  $("modo-dos").addEventListener("click", () => {
+    pintarModo("dos");
+    set(ref(db, RUTA_MODO), "dos").catch(errorFirebase);
+  });
+  $("modo-uno").addEventListener("click", () => {
+    pintarModo("uno");
+    set(ref(db, RUTA_MODO), "uno").catch(errorFirebase);
+  });
+  onValue(ref(db, RUTA_MODO), (snap) => pintarModo(snap.val()), errorFirebase);
+
   // Color de fondo del marco (se guarda en Firebase y el overlay lo lee en vivo)
   const RUTA_COLORES = "gears-colab/colores";
-  const COLOR_BASE = { kizashi: "#0d0d0d", bloodsitax: "#ff007f" };
+  const COLOR_BASE = { kizashi: "#0d0d0d", bloodsitax: "#ff007f", total: "#0d0d0d" };
   const esperaColor = {};
 
   jugadores.forEach((j) => {
@@ -535,10 +644,12 @@
       const resp = await fetch("overlay.html", { cache: "no-store" });
       if (!resp.ok) throw new Error("No se encontro overlay.html");
       let html = await resp.text();
-      const k = $("color-kizashi").value.toUpperCase();
-      const b = $("color-bloodsitax").value.toUpperCase();
-      html = html.replace(/const COLORES_BASE = \{[^}]*\};/, `const COLORES_BASE = {kizashi: "${k}", bloodsitax: "${b}"};`);
-      const brillo = { kizashi: leerBrillo("kizashi"), bloodsitax: leerBrillo("bloodsitax") };
+      const colores = {};
+      jugadores.forEach((j) => { colores[j] = $("color-" + j).value.toUpperCase(); });
+      html = html.replace(/const COLORES_BASE = \{[^}]*\};/, `const COLORES_BASE = ${JSON.stringify(colores)};`);
+      html = html.replace(/const MODO_BASE = "[a-z]*";/, `const MODO_BASE = "${modo}";`);
+      const brillo = {};
+      jugadores.forEach((j) => { brillo[j] = leerBrillo(j); });
       html = html.replace(/const BRILLO_BASE = \{.*\};/, `const BRILLO_BASE = ${JSON.stringify(brillo)};`);
       html = html.replace("const SINCRONIZAR_COLORES = true;", "const SINCRONIZAR_COLORES = false;");
       const blob = new Blob([html], { type: "text/html" });
@@ -557,8 +668,12 @@
   window.addEventListener("keydown", (e) => {
     if (e.target.tagName === "INPUT" || e.ctrlKey || e.metaKey || e.altKey) return;
     const delta = e.shiftKey ? -1 : 1;
-    if (e.code === "Digit1" || e.code === "Numpad1") { cambiar("kizashi", delta); e.preventDefault(); }
-    else if (e.code === "Digit2" || e.code === "Numpad2") { cambiar("bloodsitax", delta); e.preventDefault(); }
+    const uno = e.code === "Digit1" || e.code === "Numpad1";
+    const dos = e.code === "Digit2" || e.code === "Numpad2";
+    const tres = e.code === "Digit3" || e.code === "Numpad3";
+    if (modo === "dos" && uno) { cambiar("kizashi", delta); e.preventDefault(); }
+    else if (modo === "dos" && dos) { cambiar("bloodsitax", delta); e.preventDefault(); }
+    else if (modo === "uno" && (uno || tres)) { cambiar("total", delta); e.preventDefault(); }
     else if (e.code === "KeyZ") { deshacer(); e.preventDefault(); }
   });
 </script>
