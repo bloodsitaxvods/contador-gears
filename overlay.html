@@ -14,6 +14,7 @@
     --pastel: #FFC1DA;
     --blanco: #FFFFFF;
     --rojo-marco: #D81B26;
+    --rojo-texto: #FF3040;
   }
 
   html, body {
@@ -36,6 +37,10 @@
     transform: translate(-50%, -50%);
     font-family: 'Fredoka', 'Quicksand', 'Segoe UI', sans-serif;
   }
+
+  /* Solo se muestra una de las dos escenas, segun el modo */
+  #stage[data-modo="dos"] .solo-uno { display: none; }
+  #stage[data-modo="uno"] .solo-dos { display: none; }
 
   /* Titulo central, encima de los dos nombres */
   .titulo {
@@ -83,6 +88,7 @@
   }
   #nombre-kizashi { left: 0; }
   #nombre-bloodsitax { left: 416px; }
+  #nombre-total { left: 208px; }
 
   .placa {
     box-sizing: border-box;
@@ -103,12 +109,19 @@
     color: var(--blanco);
     box-shadow: 0 0 14px rgba(216, 27, 38, 0.5);
   }
+  #nombre-total .placa {
+    border-color: var(--rojo-marco);
+    color: var(--rojo-texto);
+    box-shadow: 0 0 14px rgba(216, 27, 38, 0.5);
+  }
   #nombre-bloodsitax .placa {
     border-color: var(--neon);
     color: var(--pastel);
     box-shadow: 0 0 14px rgba(255, 0, 127, 0.55);
   }
   /* Nombre y apodo con el mismo tamano; --tam lo ajusta el script si no cabe */
+  #nombre-total .principal { letter-spacing: 6px; text-indent: 6px; }
+
   .principal,
   .sufijo {
     font-size: var(--tam, 28px);
@@ -127,6 +140,7 @@
   }
   #marco-kizashi { left: 0; }
   #marco-bloodsitax { left: 416px; }
+  #marco-total { left: 208px; }
 
   /* Relleno de color que queda DETRAS del marco, dentro del hueco.
      Los tres tonos se calculan desde un solo color base. */
@@ -139,7 +153,8 @@
     border-radius: 12px;
     background: radial-gradient(ellipse at center, var(--c1) 0%, var(--c2) 65%, var(--c3) 100%);
   }
-  #marco-kizashi .relleno   { --c1: #1C1C1C; --c2: #0B0B0B; --c3: #080808; }
+  #marco-kizashi .relleno,
+  #marco-total .relleno     { --c1: #1C1C1C; --c2: #0B0B0B; --c3: #080808; }
   #marco-bloodsitax .relleno { --c1: #FF0F86; --c2: #E6006F; --c3: #A60052; }
 
   .arte {
@@ -173,7 +188,8 @@
   /* Con 4 digitos el numero se achica para no tocar el marco */
   .numero.largo { font-size: 104px; }
 
-  #marco-kizashi .contenido {
+  #marco-kizashi .contenido,
+  #marco-total .contenido {
     color: var(--blanco);
     text-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
   }
@@ -199,17 +215,17 @@
 </head>
 <body>
 
-<div id="stage">
-  <div class="titulo">MUERTES</div>
+<div id="stage" data-modo="dos">
+  <div class="titulo solo-dos">MUERTES</div>
 
-  <div class="nombre" id="nombre-kizashi">
+  <div class="nombre solo-dos" id="nombre-kizashi">
     <div class="placa"><span class="principal">KIZASHI</span><span class="sufijo">- TURIP</span></div>
   </div>
-  <div class="nombre" id="nombre-bloodsitax">
+  <div class="nombre solo-dos" id="nombre-bloodsitax">
     <div class="placa"><span class="principal">BLOODSITAX</span><span class="sufijo">- SUPOR</span></div>
   </div>
 
-  <div class="marco" id="marco-kizashi">
+  <div class="marco solo-dos" id="marco-kizashi">
     <div class="relleno"></div>
     <img class="arte" src="marco-kizashi.png" alt="">
     <div class="contenido">
@@ -217,11 +233,24 @@
     </div>
   </div>
 
-  <div class="marco" id="marco-bloodsitax">
+  <div class="marco solo-dos" id="marco-bloodsitax">
     <div class="relleno"></div>
     <img class="arte" src="marco-bloodsitax.png" alt="">
     <div class="contenido">
       <div class="numero" id="num-bloodsitax">0</div>
+    </div>
+  </div>
+
+  <!-- Opcion 2: un solo marco con el contador total -->
+  <div class="nombre solo-uno" id="nombre-total">
+    <div class="placa"><span class="principal">MUERTES</span></div>
+  </div>
+
+  <div class="marco solo-uno" id="marco-total">
+    <div class="relleno"></div>
+    <img class="arte" src="marco-kizashi.png" alt="">
+    <div class="contenido">
+      <div class="numero" id="num-total">0</div>
     </div>
   </div>
 </div>
@@ -244,22 +273,26 @@
   const RUTA = "gears-colab/muertes";
   const RUTA_COLORES = "gears-colab/colores";
   const RUTA_BRILLO = "gears-colab/brillo";
+  const RUTA_MODO = "gears-colab/modo";
+  const JUGADORES = ["kizashi", "bloodsitax", "total"];
 
   // Colores del fondo de cada marco. El boton de descarga del panel
   // reemplaza estas dos lineas para dejar los colores fijos.
-  const COLORES_BASE = {kizashi: "#0D0D0D", bloodsitax: "#FF007F"};
-  const BRILLO_BASE = {kizashi: {activo: true, nivel: 40}, bloodsitax: {activo: true, nivel: 40}};
+  const COLORES_BASE = {kizashi: "#0D0D0D", bloodsitax: "#FF007F", total: "#0D0D0D"};
+  const BRILLO_BASE = {kizashi: {activo: true, nivel: 40}, bloodsitax: {activo: true, nivel: 40}, total: {activo: true, nivel: 40}};
+  const MODO_BASE = "dos";
   const SINCRONIZAR_COLORES = true;
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
   /* ---------- Contadores ---------- */
-  const els = {
-    kizashi: document.getElementById("num-kizashi"),
-    bloodsitax: document.getElementById("num-bloodsitax")
-  };
-  const previo = { kizashi: null, bloodsitax: null };
+  const els = {};
+  const previo = {};
+  JUGADORES.forEach((j) => {
+    els[j] = document.getElementById("num-" + j);
+    previo[j] = null;
+  });
 
   function pintar(quien, valor) {
     const el = els[quien];
@@ -277,8 +310,7 @@
 
   onValue(ref(db, RUTA), (snap) => {
     const v = snap.val() || {};
-    pintar("kizashi", Number(v.kizashi) || 0);
-    pintar("bloodsitax", Number(v.bloodsitax) || 0);
+    JUGADORES.forEach((j) => pintar(j, Number(v[j]) || 0));
   });
 
   /* ---------- Color de fondo del marco ---------- */
@@ -299,14 +331,12 @@
     relleno.style.setProperty("--c3", mezclar(hex, "negro", 0.35));
   }
 
-  aplicarColor("kizashi", COLORES_BASE.kizashi);
-  aplicarColor("bloodsitax", COLORES_BASE.bloodsitax);
+  JUGADORES.forEach((j) => aplicarColor(j, COLORES_BASE[j]));
 
   if (SINCRONIZAR_COLORES) {
     onValue(ref(db, RUTA_COLORES), (snap) => {
       const v = snap.val() || {};
-      aplicarColor("kizashi", v.kizashi || COLORES_BASE.kizashi);
-      aplicarColor("bloodsitax", v.bloodsitax || COLORES_BASE.bloodsitax);
+      JUGADORES.forEach((j) => aplicarColor(j, v[j] || COLORES_BASE[j]));
     });
   }
 
@@ -322,23 +352,24 @@
       return;
     }
     const r = (nivel / 100) * 18;
-    const colores = quien === "kizashi"
-      ? ["rgba(0,0,0,0.95)", "rgba(0,0,0,0.6)"]
-      : ["rgba(255,0,127,0.95)", "rgba(255,0,127,0.6)"];
+    const paleta = {
+      kizashi: ["rgba(0,0,0,0.95)", "rgba(0,0,0,0.6)"],
+      bloodsitax: ["rgba(255,0,127,0.95)", "rgba(255,0,127,0.6)"],
+      total: ["rgba(255,40,55,0.95)", "rgba(255,40,55,0.6)"]
+    };
+    const colores = paleta[quien];
     placa.style.setProperty(
       "--brillo",
       "0 0 " + r.toFixed(1) + "px " + colores[0] + ", 0 0 " + (r * 2).toFixed(1) + "px " + colores[1]
     );
   }
 
-  aplicarBrillo("kizashi", BRILLO_BASE.kizashi);
-  aplicarBrillo("bloodsitax", BRILLO_BASE.bloodsitax);
+  JUGADORES.forEach((j) => aplicarBrillo(j, BRILLO_BASE[j]));
 
   if (SINCRONIZAR_COLORES) {
     onValue(ref(db, RUTA_BRILLO), (snap) => {
       const v = snap.val() || {};
-      aplicarBrillo("kizashi", v.kizashi || BRILLO_BASE.kizashi);
-      aplicarBrillo("bloodsitax", v.bloodsitax || BRILLO_BASE.bloodsitax);
+      JUGADORES.forEach((j) => aplicarBrillo(j, v[j] || BRILLO_BASE[j]));
     });
   }
 
@@ -351,7 +382,17 @@
       if (cabe) break;
     }
   }
-  ajustarNombres();
+  /* ---------- Modo: opcion 1 (dos marcos) u opcion 2 (un marco con el total) ---------- */
+  function aplicarModo(modo) {
+    const m = modo === "uno" ? "uno" : "dos";
+    document.getElementById("stage").setAttribute("data-modo", m);
+    ajustarNombres();
+  }
+  aplicarModo(MODO_BASE);
+  if (SINCRONIZAR_COLORES) {
+    onValue(ref(db, RUTA_MODO), (snap) => aplicarModo(snap.val() || MODO_BASE));
+  }
+
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombres);
 </script>
 
